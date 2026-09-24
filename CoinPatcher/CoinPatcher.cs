@@ -1,0 +1,172 @@
+using System.ComponentModel.DataAnnotations;
+using System.Globalization;
+using Mutagen.Bethesda;
+using Mutagen.Bethesda.Plugins.Cache;
+using Mutagen.Bethesda.Skyrim;
+using Mutagen.Bethesda.Synthesis;
+
+namespace CoinPatcher;
+
+public static class CoinPatcher
+{
+    public static void Run(
+        IPatcherState<ISkyrimMod, ISkyrimModGetter> state,
+        Settings settings,
+        TextWriter output)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(settings);
+        ArgumentNullException.ThrowIfNull(output);
+
+        ValidateSettings(settings);
+
+        int coinsExamined = 0;
+        int coinsPatched = 0;
+        int alreadyCorrect = 0;
+        int failures = 0;
+        var resolvedCoins =
+            new List<(SupportedCoin Metadata, IMiscItemGetter Winner)>();
+
+        output.WriteLine("Supported coins:");
+
+        foreach (SupportedCoin coin in SupportedCoinCatalog.Coins)
+        {
+            coinsExamined++;
+
+            if (!state.LinkCache.TryResolve<IMiscItemGetter>(
+                    coin.FormKey,
+                    out var winningCoin,
+                    ResolveTarget.Winner))
+            {
+                failures++;
+                output.WriteLine(
+                    $"  [ ] {coin.DisplayName} ({FormatRecord(coin)})");
+                output.WriteLine(
+                    $"ERROR: Could not resolve MISC {FormatRecord(coin)} " +
+                    $"(local FormID {coin.LocalFormId:X8}, diagnostic EditorID " +
+                    $"'{coin.EditorId}') as a winning record.");
+                continue;
+            }
+
+            if (winningCoin.IsDeleted)
+            {
+                failures++;
+                output.WriteLine(
+                    $"  [ ] {coin.DisplayName} ({FormatRecord(coin)})");
+                output.WriteLine(
+                    $"ERROR: Winning MISC {FormatRecord(coin)} is deleted " +
+                    $"(diagnostic EditorID '{coin.EditorId}').");
+                continue;
+            }
+
+            output.WriteLine(
+                $"  [✓] {coin.DisplayName} ({FormatRecord(coin)})");
+            resolvedCoins.Add((coin, winningCoin));
+        }
+
+        output.WriteLine();
+
+        if (failures != 0)
+        {
+            WriteSummary(
+                output,
+                coinsExamined,
+                coinsPatched,
+                alreadyCorrect,
+                failures);
+            throw new InvalidOperationException(
+                "Coin Patcher could not resolve every known coin. " +
+                "No patch was produced.");
+        }
+
+        foreach ((SupportedCoin metadata, IMiscItemGetter winningCoin) in
+                 resolvedCoins)
+        {
+            CoinSettings coinSettings = metadata.SelectSettings(settings);
+            string? winningName = winningCoin.Name?.String;
+            bool changeName = !string.Equals(
+                winningName,
+                coinSettings.Name,
+                StringComparison.Ordinal);
+            bool changeWeight = winningCoin.Weight != coinSettings.Weight;
+
+            if (!changeName && !changeWeight)
+            {
+                alreadyCorrect++;
+                output.WriteLine(
+                    $"Already correct {metadata.EditorId}: " +
+                    "name and weight match.");
+                continue;
+            }
+
+            MiscItem overrideCoin =
+                state.PatchMod.MiscItems.GetOrAddAsOverride(winningCoin);
+
+            output.WriteLine($"Patched {metadata.EditorId}:");
+
+            if (changeName)
+            {
+                overrideCoin.Name = coinSettings.Name;
+                output.WriteLine(
+                    $"  Name: {FormatName(winningName)} -> " +
+                    $"{FormatName(coinSettings.Name)}");
+            }
+
+            if (changeWeight)
+            {
+                overrideCoin.Weight = coinSettings.Weight;
+                output.WriteLine(
+                    $"  Weight: {FormatWeight(winningCoin.Weight)} -> " +
+                    $"{FormatWeight(coinSettings.Weight)}");
+            }
+
+            output.WriteLine();
+            coinsPatched++;
+        }
+
+        WriteSummary(
+            output,
+            coinsExamined,
+            coinsPatched,
+            alreadyCorrect,
+            failures);
+    }
+
+    private static void ValidateSettings(Settings settings)
+    {
+        foreach (SupportedCoin coin in SupportedCoinCatalog.Coins)
+        {
+            CoinSettings coinSettings = coin.SelectSettings(settings);
+            if (coinSettings.Weight < 0)
+            {
+                throw new ValidationException(
+                    $"{coin.DisplayName} weight must not be negative.");
+            }
+        }
+    }
+
+    private static void WriteSummary(
+        TextWriter output,
+        int coinsExamined,
+        int coinsPatched,
+        int alreadyCorrect,
+        int failures)
+    {
+        output.WriteLine($"""
+            Summary:
+              Coins examined: {coinsExamined}
+              Coins patched: {coinsPatched}
+              Already correct: {alreadyCorrect}
+              Failures: {failures}
+            """);
+    }
+
+    private static string FormatName(string? name) =>
+        name is null ? "<none>" : name;
+
+    private static string FormatRecord(SupportedCoin coin) =>
+        $"{coin.ModKey.FileName.String} | {coin.LocalFormId:X8}";
+
+    private static string FormatWeight(float weight) =>
+        weight.ToString("F6", CultureInfo.InvariantCulture);
+}
