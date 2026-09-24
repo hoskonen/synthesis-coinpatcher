@@ -20,7 +20,8 @@ public sealed record SupportedCoinCategory(
 
 public sealed record SupportedCoinPlugin(
     string DisplayName,
-    ModKey ModKey,
+    ModKey DetectionModKey,
+    ModKey RecordModKey,
     bool Required,
     ImmutableArray<SupportedCoinCategory> Categories);
 
@@ -28,6 +29,7 @@ public static class SupportedCoinCatalog
 {
     public static readonly SupportedCoinPlugin Skyrim = new(
         "Skyrim",
+        ModKey.FromFileName("Skyrim.esm"),
         ModKey.FromFileName("Skyrim.esm"),
         Required: true,
         [
@@ -41,34 +43,35 @@ public static class SupportedCoinCatalog
     public static readonly SupportedCoinPlugin Coin = new(
         "C.O.I.N.",
         ModKey.FromFileName("C.O.I.N.esp"),
+        ModKey.FromFileName("Update.esm"),
         Required: false,
         [
             new SupportedCoinCategory(
                 "Ancient Nord Drakr",
                 [
-                    new SupportedCoinRecord(0x012, "DES_DrakrDragon"),
-                    new SupportedCoinRecord(0x013, "DES_DrakrMoth"),
-                    new SupportedCoinRecord(0x014, "DES_DrakrOwl"),
-                    new SupportedCoinRecord(0x015, "DES_DrakrWhale"),
+                    new SupportedCoinRecord(0x00DE5012, "DES_DrakrDragon"),
+                    new SupportedCoinRecord(0x00DE5013, "DES_DrakrMoth"),
+                    new SupportedCoinRecord(0x00DE5014, "DES_DrakrOwl"),
+                    new SupportedCoinRecord(0x00DE5015, "DES_DrakrWhale"),
                 ],
                 settings => settings.Coin.AncientNordDrakrWeight),
             new SupportedCoinCategory(
                 "Ancient Falmer Mallari",
-                [new SupportedCoinRecord(0x020, "DES_Mallari")],
+                [new SupportedCoinRecord(0x00DE5020, "DES_Mallari")],
                 settings => settings.Coin.AncientFalmerMallariWeight),
             new SupportedCoinCategory(
                 "Ayleid Mala",
-                [new SupportedCoinRecord(0x019, "DES_Mala")],
+                [new SupportedCoinRecord(0x00DE5019, "DES_Mala")],
                 settings => settings.Coin.AyleidMalaWeight),
             new SupportedCoinCategory(
                 "Dwarven Nchuark",
-                [new SupportedCoinRecord(0x022, "DES_Nchuark")],
+                [new SupportedCoinRecord(0x00DE5022, "DES_Nchuark")],
                 settings => settings.Coin.DwarvenNchuarkWeight),
             new SupportedCoinCategory(
                 "Gibber",
                 [
-                    new SupportedCoinRecord(0x017, "DES_GibberBack"),
-                    new SupportedCoinRecord(0x018, "DES_GibberFront"),
+                    new SupportedCoinRecord(0x00DE5017, "DES_GibberBack"),
+                    new SupportedCoinRecord(0x00DE5018, "DES_GibberFront"),
                 ],
                 settings => settings.Coin.GibberWeight),
         ]);

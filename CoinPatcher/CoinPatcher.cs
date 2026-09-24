@@ -44,7 +44,7 @@ public static class CoinPatcher
         {
             bool isInstalled = state.LoadOrder.ListedOrder.Any(
                 listing =>
-                    listing.ModKey == plugin.ModKey &&
+                    listing.ModKey == plugin.DetectionModKey &&
                     listing.Mod is not null);
 
             if (!plugin.Required && !isInstalled)
@@ -62,7 +62,7 @@ public static class CoinPatcher
                 foreach (SupportedCoinRecord coin in category.Records)
                 {
                     coinsExamined++;
-                    var formKey = coin.GetFormKey(plugin.ModKey);
+                    var formKey = coin.GetFormKey(plugin.RecordModKey);
 
                     if (!state.LinkCache.TryResolve<IMiscItemGetter>(
                             formKey,
@@ -72,8 +72,9 @@ public static class CoinPatcher
                         failures++;
                         categoryErrors.Add(
                             $"Could not resolve expected MISC.{Environment.NewLine}" +
-                            $"    Plugin: {plugin.ModKey.FileName.String}{Environment.NewLine}" +
-                            $"    Expected local FormID: 0x{coin.LocalFormId:X3}{Environment.NewLine}" +
+                            $"    Plugin: {plugin.DetectionModKey.FileName.String}{Environment.NewLine}" +
+                            $"    Expected FormKey: {FormatRecord(plugin, coin)}{Environment.NewLine}" +
+                            $"    Expected local FormID: 0x{coin.LocalFormId:X8}{Environment.NewLine}" +
                             $"    EditorID: {coin.EditorId}{Environment.NewLine}" +
                             $"    Category: {category.DisplayName}");
                         continue;
@@ -269,7 +270,7 @@ public static class CoinPatcher
     private static string FormatRecord(
         SupportedCoinPlugin plugin,
         SupportedCoinRecord coin) =>
-        $"{plugin.ModKey.FileName.String} | {coin.LocalFormId:X8}";
+        $"{plugin.RecordModKey.FileName.String} | {coin.LocalFormId:X8}";
 
     private static string FormatWeight(float weight) =>
         weight.ToString("0.00######", CultureInfo.InvariantCulture);
