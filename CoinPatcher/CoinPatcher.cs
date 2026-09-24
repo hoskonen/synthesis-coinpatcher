@@ -71,9 +71,11 @@ public static class CoinPatcher
                     {
                         failures++;
                         categoryErrors.Add(
-                            $"Could not resolve MISC {FormatRecord(plugin, coin)} " +
-                            $"(diagnostic EditorID '{coin.EditorId}') as a " +
-                            "winning record.");
+                            $"Could not resolve expected MISC.{Environment.NewLine}" +
+                            $"    Plugin: {plugin.ModKey.FileName.String}{Environment.NewLine}" +
+                            $"    Expected local FormID: 0x{coin.LocalFormId:X3}{Environment.NewLine}" +
+                            $"    EditorID: {coin.EditorId}{Environment.NewLine}" +
+                            $"    Category: {category.DisplayName}");
                         continue;
                     }
 
