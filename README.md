@@ -1,9 +1,16 @@
 # Coin Patcher
 
-A Skyrim Special Edition Synthesis patcher for configuring coin names and
-weights.
+A Skyrim Special Edition Synthesis patcher for configuring supported coin
+weights and the vanilla coin name.
 
-Currently supports vanilla gold (`Skyrim.esm | 0000000F`, `Gold001`).
+## Supported mods
+
+- **Skyrim** — configurable name and weight for vanilla gold (`Gold001`).
+- **C.O.I.N.** — configurable weights for Ancient Nord Drakr, Ancient Falmer
+  Mallari, Ayleid Mala, Dwarven Nchuark, and Gibber.
+
+C.O.I.N. support changes coin weight only. It does not modify coin names,
+values, exchange rates, scripts, MCM settings, or conversion behavior.
 
 Default settings:
 
@@ -11,12 +18,18 @@ Default settings:
 Vanilla Coin:
   Name: Gold
   Weight: 0.01
+
+C.O.I.N.:
+  Ancient Nord Drakr Weight: 0.03
+  Ancient Falmer Mallari Weight: 0.02
+  Ayleid Mala Weight: 0.02
+  Dwarven Nchuark Weight: 0.03
+  Gibber Weight: 0.01
 ```
 
-The patcher changes only the MISC record's name and weight. It uses the current
-winning override as its source, preserving value, model, icons, sounds,
-keywords, and all other record data. No override is created when the configured
-values already match.
+The patcher uses each current winning MISC override as its source, preserving
+all fields it does not configure. No override is created when the configured
+values already match. If C.O.I.N. is not installed, its categories are skipped.
 
 Add the repository to Synthesis, adjust the generated settings, and run the
-patcher after other mods that edit vanilla gold. Weight cannot be negative.
+patcher after other mods that edit supported coins. Weight cannot be negative.
