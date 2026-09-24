@@ -20,6 +20,7 @@ public static class Program
     public static void RunPatch(
         IPatcherState<ISkyrimMod, ISkyrimModGetter> state)
     {
-        CoinPatcher.Run(state, _settings.Value, Console.Out);
+        CoinPatcher.Run(state, _settings.Value, Console.Error);
+        Console.Error.Flush();
     }
 }
